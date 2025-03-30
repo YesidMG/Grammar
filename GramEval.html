@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GramEval</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>GramEval - Evaluador de Gramáticas</h1>
+    
+    <div id="gramatica">
+        <h2>Definir Gramática</h2>
+        <div id="reglasContainer"></div>
+        <button onclick="procesarGramatica()">Procesar Gramática</button>
+    </div>
+
+    <div id="resultados">
+        <h2>Resultados</h2>
+        <label>Terminales:</label>
+        <input type="text" id="terminales" readonly>
+        
+        <label>No Terminales:</label>
+        <input type="text" id="noTerminales" readonly>
+
+        <label>Símbolo Inicial:</label>
+        <input type="text" id="simboloInicial" readonly>
+
+        <p id="tipoGramatica"></p>
+    </div>
+    <div id="validacion">
+        <h2>Validar Cadena</h2>
+        <input type="text" id="cadenaInput" placeholder="Ingrese una cadena">
+        <button onclick="validarCadena()">Validar</button>
+        <p id="resultadoValidacion"></p>
+    </div>
+    
+    <div id="generacion">
+        <h2>Generar Cadenas</h2>
+        <input type="number" id="longitudInput" placeholder="Ingrese longitud">
+        <button onclick="generarCadenas()">Generar</button>
+        <p id="resultadoGeneracion"></p>
+    </div>
+    
+
+    <script src="script.js"></script>
+</body>
+</html>
