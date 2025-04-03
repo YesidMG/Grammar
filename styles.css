@@ -89,6 +89,15 @@ body {
     box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.2);
 }
 
+.regla input.izquierda {
+    width: 30%;
+    text-transform: none; /* Removemos el forzado a mayúsculas */
+}
+
+.regla input.derecha {
+    width: 50%;
+}
+
 .regla span {
     font-size: 1.2rem;
     color: var(--color-text-light);
@@ -167,6 +176,22 @@ body {
     transform: translateY(-2px);
 }
 
+.botones-grupo {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-secondary {
+    background-color: var(--color-text-light);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+
 /* Resultados */
 .resultado-tipo {
     font-size: 1.1rem;
@@ -184,6 +209,33 @@ body {
     margin-top: 1rem;
     background-color: #f8f9fa;
     font-weight: 500;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: var(--radius);
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* Estilo para la barra de desplazamiento */
+.resultado-mensaje::-webkit-scrollbar {
+    width: 8px;
+}
+
+.resultado-mensaje::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.resultado-mensaje::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: 4px;
+}
+
+.resultado-mensaje::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary-dark);
 }
 
 /* Lista de cadenas */
@@ -204,6 +256,34 @@ body {
 
 #listaCadenas li:hover {
     background: #e9ecef;
+}
+
+/* Estilo para el árbol de derivación */
+.arbol-derivacion {
+    font-family: monospace;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: var(--radius);
+    margin-top: 10px;
+    white-space: pre;
+}
+
+.total-cadenas {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    background-color: var(--color-primary);
+    color: white;
+    border-radius: var(--radius);
+    text-align: center;
+    font-weight: 500;
+}
+
+.cadena-generada {
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    background: #f8f9fa;
+    border-radius: var(--radius);
+    border-left: 3px solid var(--color-primary);
 }
 
 /* Adaptabilidad para móviles */

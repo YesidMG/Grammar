@@ -1,9 +1,6 @@
 // Función para agregar una nueva regla de producción en la interfaz
 export function agregarNuevaRegla() {
-    // Obtiene el contenedor donde se agregarán las reglas
     const container = document.getElementById("reglasContainer");
-
-    // Crea un nuevo div para representar una regla
     const div = document.createElement("div");
     div.classList.add("regla");
 
@@ -23,15 +20,15 @@ export function agregarNuevaRegla() {
     inputDer.classList.add("derecha");
     inputDer.placeholder = "Producción";
 
-    // Evento para agregar una nueva regla automáticamente si el usuario comienza a escribir en la última regla
-    inputDer.addEventListener("input", function () {
+    // Evento para agregar nueva regla
+    inputDer.addEventListener("input", function() {
         if (this.value.trim() !== "" && container.lastChild === div) {
             agregarNuevaRegla();
         }
     });
 
-    // Evento para eliminar una regla si el campo de producción queda vacío y no es la última regla
-    inputDer.addEventListener("blur", function () {
+    // Evento para eliminar regla vacía
+    inputDer.addEventListener("blur", function() {
         if (this.value.trim() === "" && container.lastChild !== div) {
             container.removeChild(div);
         }
