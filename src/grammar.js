@@ -44,6 +44,14 @@ export function procesarGramatica() {
     });
 
     // Muestra los resultados en la interfaz
+
+    const tipo = determinarTipo();
+
+    if (tipo === "Tipo 1") {
+        alert("Solo se permiten gramáticas de tipo 2 o tipo 3");
+        return;
+    }
+
     document.getElementById("tipoGramatica").innerText = `Tipo de gramática: ${determinarTipo()}`;
     document.getElementById("terminales").value = `T={ ${[...terminales].join(", ") || ""} }`;
     document.getElementById("noTerminales").value = `NT={ ${[...noTerminales].join(", ") || ""} }`;
@@ -51,18 +59,122 @@ export function procesarGramatica() {
 }
 
 // Función para determinar el tipo de gramática según la jerarquía de Chomsky
+// function determinarTipo() {
+//     let tipo = 3; // Por defecto, se asume que es de tipo 3 (gramática regular)
+//     for (const izq in gramatica) {
+//         gramatica[izq].forEach(der => {
+//             // Si el lado izquierdo tiene más de un símbolo o el lado derecho tiene múltiples no terminales
+//             if (izq.length > 1 || /[A-Z].*[A-Z]/.test(der)) {
+//                 tipo = 2; // Es de tipo 2 (gramática libre de contexto)
+//             }
+//         });
+//     }
+//     return `Tipo ${tipo}`;
+// }
+
 function determinarTipo() {
-    let tipo = 3; // Por defecto, se asume que es de tipo 3 (gramática regular)
+    // Por defecto, asumimos Tipo 0 (gramática irrestricta)
+    let tipo = 0;
+
+    // Conjuntos de no terminales y terminales
+    const noTerminales = new Set(Object.keys(gramatica));
+    const terminales = new Set();
+
+    // Identificar terminales a partir de las producciones
     for (const izq in gramatica) {
-        gramatica[izq].forEach(der => {
-            // Si el lado izquierdo tiene más de un símbolo o el lado derecho tiene múltiples no terminales
-            if (izq.length > 1 || /[A-Z].*[A-Z]/.test(der)) {
-                tipo = 2; // Es de tipo 2 (gramática libre de contexto)
+        for (const der of gramatica[izq]) {
+            for (const simbolo of der) {
+                if (!noTerminales.has(simbolo) && simbolo !== 'ε') {
+                    terminales.add(simbolo);
+                }
             }
-        });
+        }
     }
+
+    // Verificar gramática sensible al contexto (Tipo 1)
+    let esTipo1 = true;
+    for (const izq in gramatica) {
+        for (const der of gramatica[izq]) {
+            // Permitir producción vacía solo si es el símbolo inicial
+            if (der === 'ε' || der === '') {
+                if (izq !== simboloInicial) {
+                    esTipo1 = false;
+                    break;
+                }
+                continue;
+            }
+            // En gramáticas sensibles al contexto, la longitud de der debe ser mayor o igual a la de izq
+            if (der.length < izq.length) {
+                esTipo1 = false;
+                break;
+            }
+        }
+        if (!esTipo1) break;
+    }
+
+    if (!esTipo1) {
+        // Si no cumple las restricciones de Tipo 1, se considera Tipo 0
+        return `Tipo ${tipo}`;
+    } else {
+        tipo = 1;
+    }
+
+    // Verificar gramática libre de contexto (Tipo 2)
+    // En este tipo, cada regla debe tener un único no terminal en el lado izquierdo
+    let esTipo2 = true;
+    for (const izq in gramatica) {
+        if (izq.length !== 1) {
+            esTipo2 = false;
+            break;
+        }
+    }
+    if (!esTipo2) {
+        return `Tipo ${tipo}`; // Sigue siendo Tipo 1
+    } else {
+        tipo = 2;
+    }
+
+    // Verificar gramática regular (Tipo 3)
+    // Se evalúa si es regular por la derecha o por la izquierda (no se permiten mezclas)
+    let esRegularDerecha = true;
+    let esRegularIzquierda = true;
+
+    // Suponiendo que:
+    // - Terminales: letras minúsculas (a-z)
+    // - No terminales: letras mayúsculas (A-Z)
+    // Para gramática regular derecha, la producción debe ser: una o más terminales, opcionalmente seguidas de un único no terminal
+    const formatoDerecha = /^[a-z]+([A-Z])?$/;
+    // Para gramática regular izquierda, la producción debe ser: un opcional no terminal seguido de una o más terminales
+    const formatoIzquierda = /^([A-Z])?[a-z]+$/;
+
+    for (const izq in gramatica) {
+        for (const der of gramatica[izq]) {
+            // La producción vacía solo se permite en el símbolo inicial
+            if (der === 'ε' || der === '') {
+                if (izq !== simboloInicial) {
+                    esRegularDerecha = false;
+                    esRegularIzquierda = false;
+                    break;
+                }
+                continue;
+            }
+            if (!formatoDerecha.test(der)) {
+                esRegularDerecha = false;
+            }
+            if (!formatoIzquierda.test(der)) {
+                esRegularIzquierda = false;
+            }
+        }
+    }
+
+    // Se considera regular si cumple de forma consistente alguna de las dos (derecha o izquierda)
+    if (esRegularDerecha || esRegularIzquierda) {
+        tipo = 3;
+    }
+
     return `Tipo ${tipo}`;
 }
+
 
 // Función para validar si una cadena pertenece al lenguaje generado por la gramática
 export function validarCadena() {

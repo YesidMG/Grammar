@@ -9,41 +9,51 @@
 </head>
 
 <body>
-    <h1>GramEval - Evaluador de Gramáticas</h1>
+    <h1 class="app-titulo">GramEval - Evaluador de Gramáticas</h1>
 
-    <div id="gramatica">
-        <h2>Definir Gramática</h2>
-        <div id="reglasContainer"></div>
-        <button id="procesar-gramatica">Procesar Gramática</button>
+    <div id="gramatica" class="seccion seccion-gramatica">
+        <h2 class="seccion-titulo">Definir Gramática</h2>
+        <div id="reglasContainer" class="reglas-container"></div>
+        <button id="procesar-gramatica" class="btn btn-primary">Procesar Gramática</button>
     </div>
 
-    <div id="resultados">
-        <h2>Resultados</h2>
-        <label>Terminales:</label>
-        <input type="text" id="terminales" readonly>
+    <div id="resultados" class="seccion seccion-resultados">
+        <h2 class="seccion-titulo">Resultados</h2>
+        <div class="campo-grupo">
+            <label class="campo-etiqueta">Terminales:</label>
+            <input type="text" id="terminales" class="campo-input" readonly>
+        </div>
 
-        <label>No Terminales:</label>
-        <input type="text" id="noTerminales" readonly>
+        <div class="campo-grupo">
+            <label class="campo-etiqueta">No Terminales:</label>
+            <input type="text" id="noTerminales" class="campo-input" readonly>
+        </div>
 
-        <label>Símbolo Inicial:</label>
-        <input type="text" id="simboloInicial" readonly>
+        <div class="campo-grupo">
+            <label class="campo-etiqueta">Símbolo Inicial:</label>
+            <input type="text" id="simboloInicial" class="campo-input" readonly>
+        </div>
 
-        <p id="tipoGramatica"></p>
-    </div>
-    <div id="validacion">
-        <h2>Validar Cadena</h2>
-        <input type="text" id="cadenaInput" placeholder="Ingrese una cadena">
-        <button id="validar-cadena">Validar</button>
-        <p id="resultadoValidacion"></p>
-    </div>
-
-    <div id="generacion">
-        <h2>Generar Cadenas</h2>
-        <input type="number" id="longitudInput" placeholder="Ingrese longitud">
-        <button id="generar-cadena">Generar</button>
-        <p id="resultadoGeneracion"></p>
+        <p id="tipoGramatica" class="resultado-tipo"></p>
     </div>
 
+    <div id="validacion" class="seccion seccion-validacion">
+        <h2 class="seccion-titulo">Validar Cadena</h2>
+        <div class="campo-grupo">
+            <input type="text" id="cadenaInput" class="campo-input" placeholder="Ingrese una cadena">
+            <button id="validar-cadena" class="btn btn-action">Validar</button>
+        </div>
+        <p id="resultadoValidacion" class="resultado-mensaje"></p>
+    </div>
+
+    <div id="generacion" class="seccion seccion-generacion">
+        <h2 class="seccion-titulo">Generar Cadenas</h2>
+        <div class="campo-grupo">
+            <input type="number" id="longitudInput" class="campo-input" placeholder="Ingrese longitud">
+            <button id="generar-cadena" class="btn btn-action">Generar</button>
+        </div>
+        <p id="resultadoGeneracion" class="resultado-mensaje"></p>
+    </div>
 
     <script src="./main.js" type="module"></script>
 </body>
