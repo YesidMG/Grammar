@@ -114,6 +114,9 @@ export function validarCadena() {
     let cadena = document.getElementById("cadenaInput").value;
     const resultado = document.getElementById("resultadoValidacion");
 
+    // Mostrar mensaje de búsqueda
+    resultado.innerHTML = `<div class="buscando">Verificando si la cadena pertenece al lenguaje...</div>`;
+
     // Caso especial: cadena vacía (epsilon)
     if (cadena.trim() === "") {
         // Verificar derivación directa a epsilon
@@ -126,46 +129,88 @@ export function validarCadena() {
         cadena = "";
     }
 
-    let derivaciones = []; // Almacena las derivaciones posibles
+    // Usar un enfoque de búsqueda en anchura (BFS) con límite de iteraciones
+    const MAX_ITERACIONES = 100000;
+    let iteraciones = 0;
 
-    // Función recursiva para derivar la cadena
-    function derivar(actual, pasos) {
-        if (actual === cadena) {
-            derivaciones.push(pasos.slice()); // Si se deriva la cadena, se guarda el camino
-            return;
-        }
+    // Cola para BFS con objetos que contienen la cadena actual y el camino de derivación
+    let cola = [{ cadena: simboloInicial, derivacion: [`${simboloInicial}`] }];
+    let visitadas = new Set([simboloInicial]);
 
-        // Límite para evitar bucles infinitos con producciones lambda
-        if (actual.length > cadena.length * 2) return;
+    // Función para procesar la búsqueda en lotes
+    const procesarLote = () => {
+        const ITERACIONES_POR_LOTE = 500;
+        let i = 0;
 
-        // Intenta reemplazar no terminales con sus producciones
-        for (const [izq, producciones] of Object.entries(gramatica)) {
-            for (let prod of producciones) {
-                if (actual.includes(izq)) {
-                    // Si la producción es lambda, reemplazar por cadena vacía
-                    if (prod === "λ") prod = "";
+        while (i < ITERACIONES_POR_LOTE && cola.length > 0 && iteraciones < MAX_ITERACIONES) {
+            const actual = cola.shift();
+            iteraciones++;
 
-                    const nuevo = actual.replace(izq, prod); // Reemplaza el no terminal
-                    pasos.push(`${actual} → ${nuevo}`); // Guarda el paso
-                    derivar(nuevo, pasos); // Llama recursivamente
-                    pasos.pop(); // Elimina el paso actual al retroceder
+            // Si la cadena actual coincide con la cadena buscada, hemos encontrado una derivación
+            if (actual.cadena === cadena) {
+                mostrarResultado(actual.derivacion);
+                return;
+            }
+
+            // Si la cadena ya es más larga que la buscada y no contiene no terminales, no seguir
+            if (actual.cadena.length > cadena.length * 2 && !actual.cadena.match(/[A-Z]/)) {
+                continue;
+            }
+
+            // Intentar aplicar todas las producciones posibles a cada no terminal
+            for (const [izq, producciones] of Object.entries(gramatica)) {
+                // Encontrar todas las ocurrencias del lado izquierdo
+                let pos = -1;
+                while ((pos = actual.cadena.indexOf(izq, pos + 1)) !== -1) {
+                    // Aplicar cada producción posible a esta ocurrencia
+                    for (let produccion of producciones) {
+                        // Si la producción es lambda, reemplazar por cadena vacía
+                        if (produccion === "λ") produccion = "";
+
+                        const nuevaCadena =
+                            actual.cadena.substring(0, pos) +
+                            produccion +
+                            actual.cadena.substring(pos + izq.length);
+
+                        // Solo añadir a la cola si no hemos visitado esta cadena antes
+                        if (!visitadas.has(nuevaCadena)) {
+                            // Crear nueva derivación añadiendo este paso
+                            const nuevaDerivacion = [...actual.derivacion, `${actual.cadena} → ${nuevaCadena}`];
+                            cola.push({ cadena: nuevaCadena, derivacion: nuevaDerivacion });
+                            visitadas.add(nuevaCadena);
+                        }
+                    }
                 }
             }
+
+            i++;
         }
-    }
 
-    // Inicia la derivación desde el símbolo inicial
-    derivar(simboloInicial, [`${simboloInicial}`]);
+        // Si aún quedan elementos en la cola y no hemos superado el límite, continuar procesando
+        if (cola.length > 0 && iteraciones < MAX_ITERACIONES) {
+            // Actualizar mensaje de búsqueda con progreso
+            resultado.innerHTML = `<div class="buscando">Verificando... (${iteraciones} derivaciones probadas)</div>`;
+            setTimeout(procesarLote, 0);
+        } else {
+            // Si no encontramos una derivación, mostrar mensaje de error
+            if (iteraciones >= MAX_ITERACIONES) {
+                resultado.innerHTML = `No se pudo determinar si la cadena pertenece al lenguaje después de ${MAX_ITERACIONES} derivaciones.`;
+            } else {
+                resultado.innerHTML = "La cadena no pertenece al lenguaje.";
+            }
+        }
+    };
 
-    // Muestra los resultados en la interfaz
-    if (derivaciones.length > 0) {
-        const arbol = derivaciones[0].map((paso, i) => {
+    // Función para mostrar el resultado de la derivación
+    const mostrarResultado = (derivacion) => {
+        const arbol = derivacion.map((paso, i) => {
             return ' '.repeat(i * 2) + paso;
         }).join('\n');
         resultado.innerHTML = `<div class="arbol-derivacion">${arbol}</div>`;
-    } else {
-        resultado.innerHTML = "La cadena no pertenece al lenguaje.";
-    }
+    };
+
+    // Iniciar el procesamiento
+    setTimeout(procesarLote, 0);
 }
 
 // Función para generar cadenas de una longitud específica
@@ -180,90 +225,136 @@ export function generarCadenas() {
     let generadas = new Set();
     const LIMITE_CADENAS = 5; // Límite de cadenas a generar
 
-    // Caso especial: si la longitud es 0, verificar si podemos derivar epsilon
-    if (longitud === 0) {
-        // Iniciar recursión con el símbolo inicial
-        generarRecursivo(simboloInicial);
-    } else {
-        // Para longitudes mayores a 0
-        generarRecursivo(simboloInicial);
-    }
+    // Mostrar mensaje de búsqueda
+    const resultado = document.getElementById("resultadoGeneracion");
+    resultado.innerHTML = `<div class="buscando">Buscando cadenas de longitud ${longitud}...</div>`;
 
-    function generarRecursivo(cadenaActual) {
-        // Si ya tenemos suficientes cadenas, detener la recursión
-        if (generadas.size >= LIMITE_CADENAS) {
-            return;
+    // Crear un contador para mostrar el progreso
+    let ultimaActualizacion = Date.now();
+
+    // Aumentar el límite de iteraciones para longitudes mayores
+    const MAX_ITERACIONES = 50000;
+    let iteraciones = 0;
+
+    // Usar un enfoque iterativo con una cola priorizada
+    // Para longitudes grandes, priorizar cadenas con más terminales
+    let cola = [{ cadena: simboloInicial, profundidad: 0 }];
+    let cadenasProcesadas = new Set([simboloInicial]);
+
+    // Función para actualizar el mensaje de búsqueda (ejecutada por setTimeout)
+    const actualizarProgreso = () => {
+        if (generadas.size < LIMITE_CADENAS && iteraciones < MAX_ITERACIONES && cola.length > 0) {
+            resultado.innerHTML = `<div class="buscando">Buscando cadenas de longitud ${longitud}... (${iteraciones} iteraciones, ${generadas.size}/${LIMITE_CADENAS} encontradas)</div>`;
+            setTimeout(continuarBusqueda, 0);
+        } else {
+            finalizarBusqueda();
         }
+    };
 
-        // Calculamos la longitud efectiva (sin contar símbolos no terminales)
-        const longitudEfectiva = [...cadenaActual].filter(c => !/[A-Z]/.test(c)).length;
+    // Función principal de búsqueda que ejecuta un lote de iteraciones
+    const continuarBusqueda = () => {
+        const ITERACIONES_POR_LOTE = 1000;
+        let i = 0;
 
-        // Si la cadena no tiene no terminales y tiene la longitud buscada
-        if (!cadenaActual.match(/[A-Z]/) && longitudEfectiva === longitud) {
-            // Si es cadena vacía y buscamos longitud 0, mostrar λ
-            if (cadenaActual === "" && longitud === 0) {
-                generadas.add("λ");
-            } else if (cadenaActual !== "") {
-                generadas.add(cadenaActual);
+        while (i < ITERACIONES_POR_LOTE && cola.length > 0 && generadas.size < LIMITE_CADENAS && iteraciones < MAX_ITERACIONES) {
+            // Ordenar la cola para priorizar cadenas prometedoras
+            if (longitud > 5 && iteraciones % 100 === 0) {
+                cola.sort((a, b) => {
+                    const terminalesA = [...a.cadena].filter(c => !/[A-Z]/.test(c)).length;
+                    const terminalesB = [...b.cadena].filter(c => !/[A-Z]/.test(c)).length;
+                    return terminalesB - terminalesA; // Priorizar cadenas con más terminales
+                });
             }
-            return;
-        }
 
-        // Si la parte de terminales ya es más larga que la longitud buscada, no seguimos
-        if (longitudEfectiva > longitud) {
-            return;
-        }
+            // ...existing code...
+            const { cadena: cadenaActual, profundidad } = cola.shift();
+            iteraciones++;
 
-        // Buscamos todas las posibles sustituciones
-        let seHizoSustitucion = false;
+            // Calculamos la longitud efectiva (sin contar símbolos no terminales)
+            const longitudEfectiva = [...cadenaActual].filter(c => !/[A-Z]/.test(c)).length;
 
-        // Intentar todas las reglas de producción posibles
-        for (const [izq, producciones] of Object.entries(gramatica)) {
-            if (generadas.size >= LIMITE_CADENAS) break;
+            // Resto del código de procesamiento...
+            // Si la cadena no tiene no terminales y tiene la longitud buscada
+            if (!cadenaActual.match(/[A-Z]/) && longitudEfectiva === longitud) {
+                // Si es cadena vacía y buscamos longitud 0, mostrar λ
+                if (cadenaActual === "" && longitud === 0) {
+                    generadas.add("λ");
+                } else if (cadenaActual !== "") {
+                    generadas.add(cadenaActual);
+                }
+                continue;
+            }
 
-            // Encontrar todas las ocurrencias del lado izquierdo
-            let pos = -1;
-            while ((pos = cadenaActual.indexOf(izq, pos + 1)) !== -1) {
-                // Aplicar cada producción posible
-                for (let produccion of producciones) {
-                    if (generadas.size >= LIMITE_CADENAS) break;
+            // Si la parte de terminales ya es más larga que la longitud buscada, no seguimos
+            if (longitudEfectiva > longitud) {
+                continue;
+            }
 
-                    // Si la producción es lambda, reemplazar por cadena vacía
-                    let produccionEfectiva = produccion;
-                    if (produccion === "λ") {
-                        produccionEfectiva = "";
+            // Si la cadena tiene demasiados no terminales, no es prometedora para cadenas largas
+            const noTerminales = [...cadenaActual].filter(c => /[A-Z]/.test(c)).length;
+            if (longitud > 5 && noTerminales > longitud * 2) {
+                continue;
+            }
+
+            // Buscamos todas las posibles sustituciones
+            for (const [izq, producciones] of Object.entries(gramatica)) {
+                if (generadas.size >= LIMITE_CADENAS) break;
+
+                // Encontrar todas las ocurrencias del lado izquierdo
+                let pos = -1;
+                while ((pos = cadenaActual.indexOf(izq, pos + 1)) !== -1) {
+                    // Aplicar cada producción posible
+                    for (let produccion of producciones) {
+                        if (generadas.size >= LIMITE_CADENAS) break;
+
+                        // Si la producción es lambda, reemplazar por cadena vacía
+                        let produccionEfectiva = produccion;
+                        if (produccion === "λ") {
+                            produccionEfectiva = "";
+                        }
+
+                        const nuevaCadena =
+                            cadenaActual.substring(0, pos) +
+                            produccionEfectiva +
+                            cadenaActual.substring(pos + izq.length);
+
+                        // Solo agregamos a la cola si no hemos procesado esta cadena antes
+                        if (!cadenasProcesadas.has(nuevaCadena)) {
+                            cola.push({ cadena: nuevaCadena, profundidad: profundidad + 1 });
+                            cadenasProcesadas.add(nuevaCadena);
+                        }
                     }
-
-                    const nuevaCadena =
-                        cadenaActual.substring(0, pos) +
-                        produccionEfectiva +
-                        cadenaActual.substring(pos + izq.length);
-
-                    seHizoSustitucion = true;
-                    generarRecursivo(nuevaCadena);
                 }
             }
+
+            i++;
         }
 
-        // Si no se pudo hacer ninguna sustitución y la cadena tiene no terminales
-        // entonces esta rama no llevará a una cadena válida
-        if (!seHizoSustitucion && cadenaActual.match(/[A-Z]/)) {
-            return;
+        // Actualizar la interfaz cada cierto tiempo para mostrar el progreso
+        actualizarProgreso();
+    };
+
+    // Función para mostrar los resultados finales
+    const finalizarBusqueda = () => {
+        if (generadas.size > 0) {
+            const cadenasOrdenadas = [...generadas].sort();
+            resultado.innerHTML = cadenasOrdenadas
+                .map(cadena => `<div class="cadena-generada">${cadena}</div>`)
+                .join('');
+
+            resultado.innerHTML += `<div class="total-cadenas">Mostrando: ${generadas.size} ${generadas.size === LIMITE_CADENAS ? '(limitado a 5)' : ''} cadenas</div>`;
+        } else {
+            // Proporcionar más información cuando no se encuentran cadenas
+            if (iteraciones >= MAX_ITERACIONES) {
+                resultado.innerHTML = `No se encontraron cadenas de longitud ${longitud} después de ${MAX_ITERACIONES} iteraciones. Prueba con una longitud menor o una gramática diferente.`;
+            } else {
+                resultado.innerHTML = `No es posible generar cadenas de longitud ${longitud} con esta gramática.`;
+            }
         }
-    }
+    };
 
-    // Mostrar resultados
-    const resultado = document.getElementById("resultadoGeneracion");
-    if (generadas.size > 0) {
-        const cadenasOrdenadas = [...generadas].sort();
-        resultado.innerHTML = cadenasOrdenadas
-            .map(cadena => `<div class="cadena-generada">${cadena}</div>`)
-            .join('');
-
-        resultado.innerHTML += `<div class="total-cadenas">Mostrando: ${generadas.size} ${generadas.size === LIMITE_CADENAS ? '(limitado a 5)' : ''} cadenas</div>`;
-    } else {
-        resultado.innerHTML = "No es posible generar cadenas de esa longitud.";
-    }
+    // Iniciar la búsqueda
+    setTimeout(continuarBusqueda, 0);
 }
 
 // Agregar función de limpieza
