@@ -388,13 +388,14 @@ export function cargarArchivo() {
                         <input type="text" class="izquierda" value="${izq}">
                         <span>→</span>
                         <input type="text" class="derecha" value="${produccion}">
+                        <button class="btn-lambda" type="button" onclick="this.previousElementSibling.value += 'λ';">λ</button>
                     </div>
                 `;
                 reglasContainer.innerHTML += reglaHTML;
             });
         }
 
-        procesarGramatica() // Procesar la gramática cargada
+        procesarGramatica(); // Procesar la gramática cargada
         agregarNuevaRegla(); // Agregar una nueva regla vacía al final
         alert("Gramática cargada correctamente.");
     };

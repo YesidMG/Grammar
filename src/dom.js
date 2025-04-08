@@ -20,15 +20,25 @@ export function agregarNuevaRegla() {
     inputDer.classList.add("derecha");
     inputDer.placeholder = "Producción";
 
+    // Crea un botón para insertar el símbolo λ
+    const botonLambda = document.createElement("button");
+    botonLambda.type = "button";
+    botonLambda.classList.add("btn-lambda");
+    botonLambda.innerText = "λ";
+    botonLambda.onclick = function () {
+        inputDer.value += "λ"; // Inserta el símbolo λ en el campo de producción
+        agregarNuevaRegla();
+    };
+
     // Evento para agregar nueva regla
-    inputDer.addEventListener("input", function() {
+    inputDer.addEventListener("input", function () {
         if (this.value.trim() !== "" && container.lastChild === div) {
             agregarNuevaRegla();
         }
     });
 
     // Evento para eliminar regla vacía
-    inputDer.addEventListener("blur", function() {
+    inputDer.addEventListener("blur", function () {
         if (this.value.trim() === "" && container.lastChild !== div) {
             container.removeChild(div);
         }
@@ -38,6 +48,7 @@ export function agregarNuevaRegla() {
     div.appendChild(inputIzq);
     div.appendChild(flecha);
     div.appendChild(inputDer);
+    div.appendChild(botonLambda); // Agrega el botón λ al div
 
     // Agrega el div de la regla al contenedor
     container.appendChild(div);
