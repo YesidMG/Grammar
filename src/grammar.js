@@ -8,15 +8,9 @@ let simboloInicial = '';
 
 // Función para procesar las reglas de la gramática ingresadas por el usuario
 export function procesarGramatica() {
-
     gramatica = {};
     const reglas = document.querySelectorAll(".regla");
     const noTerminalesSet = new Set();
-
-    if (reglas.length == 1) {
-        alert("Por favor, agregue al menos una regla de producción antes de procesar la gramática.");
-        return;
-    }
 
     // Primera pasada: recolectar no terminales
     reglas.forEach(regla => {
@@ -31,27 +25,46 @@ export function procesarGramatica() {
     // Procesar las reglas
     reglas.forEach((regla, index) => {
         const izq = regla.querySelector(".izquierda").value.trim();
-        const der = regla.querySelector(".derecha").value.trim();
+        let der = regla.querySelector(".derecha").value.trim();
 
         if (izq && der) {
             if (!gramatica[izq]) {
                 gramatica[izq] = [];
             }
+
             // Manejar producciones separadas por |
             if (der.includes("|")) {
-                gramatica[izq].push(...der.split("|").map(p => p.trim()));
+                const producciones = der.split("|").map(p => p.trim());
+                producciones.forEach(prod => {
+                    // Si la producción es λ, agregar cadena vacía
+                    if (prod === 'λ') {
+                        gramatica[izq].push('');
+                    } else {
+                        // Eliminar cualquier λ que aparezca en la producción
+                        gramatica[izq].push(prod.replace(/λ/g, ''));
+                    }
+                });
             } else {
-                gramatica[izq].push(der);
+                // Si la producción es λ, agregar cadena vacía
+                if (der === 'λ') {
+                    gramatica[izq].push('');
+                } else {
+                    // Eliminar cualquier λ que aparezca en la producción
+                    gramatica[izq].push(der.replace(/λ/g, ''));
+                }
             }
             if (index === 0) simboloInicial = izq;
         }
     });
 
-    // Identifica los terminales
+    // Identifica los terminales (excluyendo λ y espacios vacíos)
     const terminales = new Set();
     Object.values(gramatica).flat().forEach(produccion => {
         [...produccion].forEach(simbolo => {
-            if (!noTerminalesSet.has(simbolo) && simbolo !== ' ' && simbolo !== 'λ') {
+            if (!noTerminalesSet.has(simbolo) && 
+                simbolo !== ' ' && 
+                simbolo !== 'λ' && 
+                simbolo !== '') {
                 terminales.add(simbolo);
             }
         });
@@ -59,11 +72,6 @@ export function procesarGramatica() {
 
     // Mostrar resultados
     const tipo = determinarTipo();
-    if (tipo === "Tipo 1") {
-        alert("Solo se permiten gramáticas de tipo 2 o tipo 3");
-        return;
-    }
-
     document.getElementById("tipoGramatica").innerText = `Tipo de gramática: ${tipo}`;
     document.getElementById("terminales").value = `T={ ${[...terminales].join(", ") || ""} }`;
     document.getElementById("noTerminales").value = `NT={ ${[...noTerminalesSet].join(", ") || ""} }`;
@@ -77,13 +85,16 @@ function determinarTipo() {
     let esRegularIzquierda = true;
 
     for (const izq in gramatica) {
-        // Verificar si el lado izquierdo tiene más de un símbolo (no es tipo 2)
+        // Verificar lado izquierdo
         if (!izq.match(/^[A-Z]$/)) {
             alert("La gramática no cumple con las reglas de tipo 2 o tipo 3.");
             return "No válida";
         }
 
         gramatica[izq].forEach(der => {
+            // Si es cadena vacía (λ), continuar
+            if (der === '') return;
+
             // Para gramática regular derecha
             if (!der.match(/^[a-z]*[A-Z]?$/)) {
                 esRegularDerecha = false;
@@ -103,6 +114,7 @@ function determinarTipo() {
 
     return `Tipo ${tipo}`;
 }
+
 // Función para validar si una cadena pertenece al lenguaje generado por la gramática
 export function validarCadena() {
     // Verificar si la gramática está procesada
